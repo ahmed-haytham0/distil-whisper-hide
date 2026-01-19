@@ -52,11 +52,11 @@ Before training, we need to create a smaller "student" model from the large teac
 ### Command
 
 ```bash
-python training/create_student_model.py \
-  --teacher_checkpoint "openai/whisper-large-v3" \
-  --encoder_layers 32 \
+!python training/create_student_model.py \
+  --teacher_checkpoint "nadsoft/Best_ASR_Model_s2" \
+  --encoder_layers 16 \
   --decoder_layers 2 \
-  --save_dir "./my-student-model-init" \
+  --save_dir "my-student-model" \
   --push_to_hub True
 ```
 
