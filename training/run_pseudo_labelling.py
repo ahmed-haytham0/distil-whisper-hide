@@ -683,7 +683,7 @@ def main():
                 concat_language.append(language)
                 condition_on_prev.append(1 if is_same_speaker else 0)   
 
-        batch[audio_column_name] = [{"array": array, "sampling_rate": sampling_rate} for array in concat_audio]
+        batch["audio_concatenated"] = [{"array": array, "sampling_rate": sampling_rate} for array in concat_audio]
         batch[text_column_name] = concat_text
         batch[id_column_name] = concat_speaker_id
         if data_args.language_column_name in batch and concat_language[0] is not None:
@@ -701,9 +701,12 @@ def main():
                 batch_size=preprocessing_batch_size,
                 num_proc=num_workers,
                 remove_columns=set(raw_datasets_features)
-                - {audio_column_name, text_column_name, id_column_name, "condition_on_prev", data_args.language_column_name},
+                - {text_column_name, id_column_name, "condition_on_prev", data_args.language_column_name},
                 desc="Concatenating dataset...",
             )
+
+        with accelerator.main_process_first():
+             raw_datasets = raw_datasets.rename_column("audio_concatenated", audio_column_name)
 
         raw_datasets = raw_datasets.cast_column(
             audio_column_name, datasets.features.Audio(sampling_rate=sampling_rate)
