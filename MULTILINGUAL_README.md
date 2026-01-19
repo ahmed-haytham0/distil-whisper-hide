@@ -23,6 +23,7 @@ We first generate "pseudo-labels" (transcriptions) using a large teacher model.
 accelerate launch training/run_pseudo_labelling.py \
   --model_name_or_path "openai/whisper-large-v3" \
   --dataset_name "your_org/your_dataset" \
+  --dataset_split_name "train" \  # <--- Specifying split is safer if you don't have validation/test
   --language_column_name "language" \  # <--- IMPORTANT: Column name for language codes
   --output_dir "./pseudo_labels" \
   --per_device_eval_batch_size 8 \
