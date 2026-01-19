@@ -20,19 +20,21 @@ We first generate "pseudo-labels" (transcriptions) using a large teacher model.
 ### Command
 
 ```bash
-accelerate launch training/run_pseudo_labelling.py \
-  --model_name_or_path "openai/whisper-large-v3" \
-  --dataset_name "your_org/your_dataset" \
-  --dataset_split_name "train" \  # <--- Specifying split is safer if you don't have validation/test
-  --language_column_name "language" \  # <--- IMPORTANT: Column name for language codes
-  --output_dir "./pseudo_labels" \
-  --per_device_eval_batch_size 8 \
-  --max_label_length 256 \
-  --preprocessing_num_workers 8 \
-  --dataloader_num_workers 4 \
-  --report_to "wandb" \
-  --wandb_project "distil-whisper-multilingual" \
-  --push_to_hub
+!accelerate launch training/run_pseudo_labelling.py \
+--model_name_or_path "nadsoft/Best_ASR_Model_s2" \
+--dataset_name "nadsoft/overfitting-test" \
+--language_column_name "language" \
+--text_column_name "transcription" \
+--dataset_split_name "train" \
+--output_dir "./pseudo_labels" \
+--per_device_eval_batch_size 8 \
+--max_label_length 256 \
+--preprocessing_num_workers 8 \
+--dataloader_num_workers 4 \
+--report_to "tensorboard" \
+--id_column_name "sample_id" \
+--concatenate_audio False \
+--push_to_hub
 ```
 
 **What this does:**
