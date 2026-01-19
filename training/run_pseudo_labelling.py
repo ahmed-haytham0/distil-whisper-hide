@@ -640,7 +640,7 @@ def main():
         raw_datasets = raw_datasets.sort(speaker_id_column_name)
 
     def concatenate_dataset(batch):
-        audio_arrays, texts, speaker_ids = [], [], []
+        audio_arrays, texts, speaker_ids, languages = [], [], [], []
 
         # skip corrupted samples
         for row in table_iter(batch.pa_table, batch_size=1):
@@ -655,17 +655,24 @@ def main():
             audio_arrays.append(sample_audio)
             texts.append(sample_text)
             speaker_ids.append(sample_speaker_id)
+            if data_args.language_column_name in row:
+                languages.append(row[data_args.language_column_name])
+            else:
+                languages.append(None)
 
         # initialize concatenations
         concat_audio = [audio_arrays[0]]
         concat_text = [texts[0]]
         concat_speaker_id = [speaker_ids[0]]
+        concat_language = [languages[0]]
         condition_on_prev = [0]
 
-        for audio_array, text, speaker_id in zip(audio_arrays[1:], texts[1:], speaker_ids[1:]):
+        for audio_array, text, speaker_id, language in zip(audio_arrays[1:], texts[1:], speaker_ids[1:], languages[1:]):
             is_same_speaker = speaker_id == concat_speaker_id[-1]
+            # also enforce same language for concatenation
+            is_same_language = language == concat_language[-1]
             is_concatenable = len(audio_array) + len(concat_audio[-1]) <= max_input_length 
-            if is_same_speaker and is_concatenable:
+            if is_same_speaker and is_same_language and is_concatenable:
                 # inplace concatenation
                 concat_audio[-1] = np.append(concat_audio[-1], audio_array)
                 concat_text[-1] = concat_text[-1] + " " + text
@@ -673,11 +680,14 @@ def main():
                 concat_audio.append(audio_array)
                 concat_text.append(text)
                 concat_speaker_id.append(speaker_id)
+                concat_language.append(language)
                 condition_on_prev.append(1 if is_same_speaker else 0)   
 
         batch[audio_column_name] = [{"array": array, "sampling_rate": sampling_rate} for array in concat_audio]
         batch[text_column_name] = concat_text
         batch[id_column_name] = concat_speaker_id
+        if data_args.language_column_name in batch and concat_language[0] is not None:
+             batch[data_args.language_column_name] = concat_language
         batch["condition_on_prev"] = condition_on_prev
 
         return batch
@@ -691,7 +701,8 @@ def main():
                 batch_size=preprocessing_batch_size,
                 num_proc=num_workers,
                 remove_columns=set(raw_datasets_features)
-                - {audio_column_name, text_column_name, id_column_name, "condition_on_prev"},
+                remove_columns=set(raw_datasets_features)
+                - {audio_column_name, text_column_name, id_column_name, "condition_on_prev", data_args.language_column_name},
                 desc="Concatenating dataset...",
             )
 
