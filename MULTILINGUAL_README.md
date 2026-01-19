@@ -43,7 +43,28 @@ accelerate launch training/run_pseudo_labelling.py \
 
 ---
 
-## Step 2: Training (Distillation)
+## Step 2: Initialize Student Model
+
+Before training, we need to create a smaller "student" model from the large teacher.
+
+### Command
+
+```bash
+python training/create_student_model.py \
+  --teacher_checkpoint "openai/whisper-large-v3" \
+  --encoder_layers 32 \
+  --decoder_layers 2 \
+  --save_dir "./my-student-model-init" \
+  --push_to_hub True
+```
+
+**Parameters:**
+*   `--encoder_layers`: Number of encoder layers to copy. **Tip**: For best performance, keep all encoder layers (32 for large-v3) so you don't lose the multilingual capabilities.
+*   `--decoder_layers`: Number of decoder layers (standard Distil-Whisper uses 2).
+
+---
+
+## Step 3: Training (Distillation)
 
 Now we train the student model to mimic the teacher.
 
