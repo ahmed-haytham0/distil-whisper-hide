@@ -1163,7 +1163,7 @@ def main():
     if not data_args.streaming and accelerator.is_main_process:
         raw_datasets.save_to_disk(output_dir, num_proc=num_workers)
         if training_args.push_to_hub:
-            raw_datasets.push_to_hub(repo_name, token=training_args.hub_token, config_name=data_args.dataset_config_name)
+            raw_datasets.push_to_hub(repo_name, token=training_args.hub_token, config_name=data_args.dataset_config_name or "default")
     accelerator.end_training()
 
 
