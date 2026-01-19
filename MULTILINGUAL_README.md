@@ -89,6 +89,7 @@ accelerate launch training/run_distillation.py \
   --freeze_decoder False \  # <--- Default is False
   --gradient_checkpointing \
   --fp16 \
+  --do_train \  # <--- Required flag to start training
   --push_to_hub
 ```
 
