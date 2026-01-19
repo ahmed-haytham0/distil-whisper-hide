@@ -701,7 +701,6 @@ def main():
                 batch_size=preprocessing_batch_size,
                 num_proc=num_workers,
                 remove_columns=set(raw_datasets_features)
-                remove_columns=set(raw_datasets_features)
                 - {audio_column_name, text_column_name, id_column_name, "condition_on_prev", data_args.language_column_name},
                 desc="Concatenating dataset...",
             )
