@@ -1051,13 +1051,14 @@ def main():
     if hasattr(teacher_model.generation_config, "is_multilingual") and teacher_model.generation_config.is_multilingual:
         # We need to set the language and task ids for previously multilingual checkpoints
         is_multilingual = True
-        tokenizer.set_prefix_tokens(language=data_args.language, task=data_args.task, predict_timestamps=False)
-        student_model.generation_config.update(
-            **{
-                "language": data_args.language,
-                "task": data_args.task,
-            }
-        )
+        if data_args.language is not None:
+            tokenizer.set_prefix_tokens(language=data_args.language, task=data_args.task, predict_timestamps=False)
+            student_model.generation_config.update(
+                **{
+                    "language": data_args.language,
+                    "task": data_args.task,
+                }
+            )
     elif data_args.language is not None:
         raise ValueError(
             "Setting language token for an English-only checkpoint is not permitted. The language argument should "
@@ -1112,7 +1113,7 @@ def main():
     metric = evaluate.load("wer")
     normalizer = (
         BasicTextNormalizer()
-        if data_args.language is not None
+        if data_args.language is not None or is_multilingual
         else EnglishTextNormalizer(tokenizer.english_spelling_normalizer)
     )
     wer_threshold = data_args.wer_threshold
