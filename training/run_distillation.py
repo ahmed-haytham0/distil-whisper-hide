@@ -1185,7 +1185,39 @@ def main():
         all_token_ids = []
         all_token_ids_unprompted = []
         for prev_ids, input_str in zip(condition_on_prev_batched, input_str_batched):
+            # Manual parsing to ensure correctness of special tokens
+            # Expected format: <|startoftranscript|><|lang|><|task|><|notimestamps|> text
+            # We use regex to be safe.
+            import re
+            
+            # Default to standard tokenization if pattern doesn't match
             token_ids = tokenizer(input_str, add_special_tokens=not use_pseudo_labels).input_ids
+            
+            # Try to parse strict structure if it looks like a pseudo-label
+            if input_str.startswith("<|startoftranscript|>"):
+                 # Regex to capture: <|startoftranscript|><|lang|><|task|>(<|notimestamps|>)? text
+                 # Note: tokens are usually enclosed in <| |>
+                 match = re.match(r"<\|startoftranscript\|><\|(\w+)\|><\|(\w+)\|>(<\|notimestamps\|>)?\s*(.*)", input_str)
+                 
+                 if match:
+                     lang_code = match.group(1)
+                     task_code = match.group(2)
+                     has_notimestamps = bool(match.group(3))
+                     text_content = match.group(4)
+                     
+                     # Construct IDs manually
+                     sot_id = tokenizer.convert_tokens_to_ids("<|startoftranscript|>")
+                     lang_id = tokenizer.convert_tokens_to_ids(f"<|{lang_code}|>")
+                     task_id = tokenizer.convert_tokens_to_ids(f"<|{task_code}|>")
+                     
+                     prefix_ids = [sot_id, lang_id, task_id]
+                     if has_notimestamps:
+                         prefix_ids.append(tokenizer.convert_tokens_to_ids("<|notimestamps|>"))
+                         
+                     # Tokenize the text content (standard text, no special tokens)
+                     text_ids = tokenizer(text_content, add_special_tokens=False).input_ids
+                     
+                     token_ids = prefix_ids + text_ids
 
             # check whether we have timestamps in the PLs and filter if required
             has_timestamps = len(set(token_ids) & set(timestamp_ids)) > 0
